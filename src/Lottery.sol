@@ -4,19 +4,19 @@ pragma solidity ^0.8.19;
 import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
-error Lottery__NotEnoughETH();
-error Lottery__intervalNotExceed();
-error Lottery__TransferFailed();
-error Lottery__NotOpen();
-error Lottery__UpkeepNotValid(uint256 balance , uint256 players, uint256 status);
-
 /// @title Lottory smart contract
 /// @author Mojtaba Mohammadi
 /// @notice a raffle smart contract to make a randome number as winner
 /// @dev Implement chainlink VRF and automated smart contracts
 
 contract Lottery is VRFConsumerBaseV2Plus {
+    error Lottery__NotEnoughETH();
+    error Lottery__intervalNotExceed();
+    error Lottery__TransferFailed();
+    error Lottery__NotOpen();
+    error Lottery__UpkeepNotValid(uint256 balance, uint256 players, uint256 status);
     /*type declarations*/
+
     enum LotteryStatus {
         Open,
         calculating
@@ -39,10 +39,10 @@ contract Lottery is VRFConsumerBaseV2Plus {
     uint32 private immutable I_CALLBACKGASLIMIT; // gas limit
     uint256 private immutable I_SUBSCRIPTIONID; // subscriptionId
 
-    mapping(address => uint256) s_playerValues;
+    mapping(address => uint256) public s_playerValues;
 
     /* Events */
-    event EnterLottery(address _sender, uint256 _value, uint256 _enterTime);
+    event EnterLottery(address indexed _sender, uint256 _value, uint256 _enterTime);
     event winnerPicked(address indexed winner);
 
     constructor(
@@ -110,7 +110,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
         }
         s_LotteryStatus = LotteryStatus.calculating;
         // getting random number from chainlink vrf
-        uint256 requestId = s_vrfCoordinator.requestRandomWords(
+        // uint256 requestId =
+        s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: I_KEYHASH,
                 subId: I_SUBSCRIPTIONID,
@@ -123,7 +124,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         // fulfillRandomWords(requestId, randomWords);
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
+    function fulfillRandomWords(uint256, /*requestId*/ uint256[] calldata randomWords) internal override {
         uint256 totalPlayers = s_players.length;
         uint256 indexOfwinner = randomWords[0] % totalPlayers; // getting the index of winner by dividing the random number to total players
         address payable _winner = s_players[indexOfwinner];
@@ -143,11 +144,19 @@ contract Lottery is VRFConsumerBaseV2Plus {
         return I_ENTERANCEFEE;
     }
 
+    function getLotteryStatus() public view returns (LotteryStatus) {
+        return s_LotteryStatus;
+    }
+
     function getWinner() external view returns (address) {
         return s_winner;
     }
 
     function getOwner() external view returns (address) {
         return s_owner;
+    }
+
+    function getPlayer(uint256 index) public view returns (address) {
+        return s_players[index];
     }
 }

@@ -46,6 +46,10 @@ contract LotteryTest is Test {
         assert(lottery.getLotteryStatus() == Lottery.LotteryStatus.Open);
     }
 
+    /*///////////////////////////////////////////////////////////
+                        test enter
+    ////////////////////////////////////////////////////////////*/
+
     function testEnterLotteryRevertWithNotEnoughAsset() public {
         // arrange
         vm.prank(player);
@@ -91,5 +95,46 @@ contract LotteryTest is Test {
         vm.expectRevert(Lottery.Lottery__NotOpen.selector);
         vm.prank(player);
         lottery.enter{value: _enteranceFee}();
+    }
+
+    /*///////////////////////////////////////////////////////////
+                        test checkUpkeep
+    ////////////////////////////////////////////////////////////*/
+
+    function testCheckupkeepFalsedIfHasNoBalance() public {
+        // arrange
+        vm.warp(block.timestamp + _interval + 10);
+        vm.roll(block.number + 1);
+
+        // act
+        (bool upkeepNeeded,) = lottery.checkUpkeep("");
+
+        // assert
+        assert(!upkeepNeeded);
+    }
+    function testCheckupkeepFalsedIfLotteryIsnotOpen() public {
+         // arrange
+        vm.prank(player);
+        lottery.enter{value: _enteranceFee}();
+        vm.warp(block.timestamp + _interval + 10);
+        vm.roll(block.number + 1);
+        lottery.performUpkeep("");
+
+        // act
+        (bool upkeepNeeded,) = lottery.checkUpkeep("");
+
+        // assert
+        assert(!upkeepNeeded);
+    }
+
+    function testperformeUpkeepRevert() public {
+         // arrange
+        vm.warp(block.timestamp + _interval + 10);
+        vm.roll(block.number + 1);
+
+        // act
+        lottery.performUpkeep("");
+
+        vm.expectRevert(Lottery.Lottery__UpkeepNotValid.selector);
     }
 }

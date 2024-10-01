@@ -80,7 +80,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
 
     // check if it's time to run
     function checkUpkeep(bytes memory /* checkData */ )
-        internal
+        public
         view
         returns (bool upkeepNeeded, bytes memory /* performeData */ )
     {

@@ -2,6 +2,7 @@
 cache/
 out/
 lib/
+lib/solmate
 
 # Ignores development broadcast logs
 !/broadcast

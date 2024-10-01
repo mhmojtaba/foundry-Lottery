@@ -13,11 +13,9 @@ abstract contract CodeConstants {
     uint96 public MOCK_baseFee = 0.2 ether;
     uint96 public MOCK_gasPrice = 1e9;
     int256 public MOCK_weiPerUnitLink = 4e15;
-
 }
 
 contract HelperConfig is CodeConstants, Script {
-
     error HelperConfig__InvalidChainId(uint256 chainid);
 
     // making a struct of the configuration needed

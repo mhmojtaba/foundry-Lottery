@@ -5,6 +5,7 @@ import {Script, console} from "forge-std/Script.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {HelperConfig, CodeConstants} from "./HelperConfig.s.sol";
 import {LinkToken} from "test/mocks/LinkToken.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
 contract CreateSubscription is Script {
     function createSubscriptionUsingconfig() public returns (uint256, address) {
@@ -63,5 +64,36 @@ contract FundSubscription is Script, CodeConstants {
 
     function run() public {
         fundSubscriptionConfig();
+    }
+}
+
+contract AddConsumer is Script {
+    function addConsumerConfig(address contractDeployed) public {
+        HelperConfig helperConfig = new HelperConfig();
+        uint256 subscriptionId = helperConfig.getConfig()._subscriptionId;
+        address vrfCoordinator = helperConfig.getConfig()._vrfCoordinator;
+        addConsumer(contractDeployed, vrfCoordinator, subscriptionId);
+    }
+
+    function addConsumer(address contractToVrf, address vrfCoordinator, uint256 subscriptionId) public {
+        console.log("adding consumer  ", contractToVrf);
+        console.log("to vrfCoordinator", vrfCoordinator);
+        console.log("with subscriptionId", subscriptionId);
+        console.log("on chain :", block.chainid);
+
+        // if (block.chainid == ANVIL_CHAINID) {
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subscriptionId, contractToVrf);
+        vm.stopBroadcast();
+        // } else {
+        //     vm.startBroadcast();
+
+        //     vm.stopBroadcast();
+        // }
+    }
+
+    function run() external {
+        address lotteryDeployed = DevOpsTools.get_most_recent_deployment("Lottery", block.chainid);
+        addConsumerConfig(lotteryDeployed);
     }
 }

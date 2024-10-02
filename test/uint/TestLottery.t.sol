@@ -5,6 +5,7 @@ import {Test, console} from "forge-std/Test.sol";
 import {Lottery} from "src/Lottery.sol";
 import {HelperConfig} from "script/HelperConfig.s.sol";
 import {LotteryDeploy} from "script/DeployLottery.s.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract LotteryTest is Test {
     Lottery public lottery;
@@ -46,6 +47,19 @@ contract LotteryTest is Test {
         assert(lottery.getLotteryStatus() == Lottery.LotteryStatus.Open);
     }
 
+
+    /*
+            Modifires
+    */
+
+    modifier lotteryEntered(){
+        vm.prank(player);
+        lottery.enter{value: _enteranceFee}();
+        vm.warp(block.timestamp + _interval + 10); // cheating => changing the time stamp to the time we needed
+        vm.roll(block.number + 1);
+        _;
+    }
+
     /*///////////////////////////////////////////////////////////
                         test enter
     ////////////////////////////////////////////////////////////*/
@@ -82,14 +96,8 @@ contract LotteryTest is Test {
         lottery.enter{value: _enteranceFee}();
     }
 
-    function testEnterLotteryByPlayerWhileLotteryIsNotOpen() public {
+    function testEnterLotteryByPlayerWhileLotteryIsNotOpen() public lotteryEntered{
         // arrange
-        vm.prank(player);
-        lottery.enter{value: _enteranceFee}();
-
-        vm.warp(block.timestamp + _interval + 10); // cheating => changing the time stamp to the time we needed
-        vm.roll(block.number + 1);
-
         lottery.performUpkeep("");
 
         vm.expectRevert(Lottery.Lottery__NotOpen.selector);
@@ -112,12 +120,9 @@ contract LotteryTest is Test {
         // assert
         assert(!upkeepNeeded);
     }
-    function testCheckupkeepFalsedIfLotteryIsnotOpen() public {
-         // arrange
-        vm.prank(player);
-        lottery.enter{value: _enteranceFee}();
-        vm.warp(block.timestamp + _interval + 10);
-        vm.roll(block.number + 1);
+
+    function testCheckupkeepFalsedIfLotteryIsnotOpen() public lotteryEntered {
+        // arrange
         lottery.performUpkeep("");
 
         // act
@@ -127,14 +132,63 @@ contract LotteryTest is Test {
         assert(!upkeepNeeded);
     }
 
-    function testperformeUpkeepRevert() public {
-         // arrange
-        vm.warp(block.timestamp + _interval + 10);
-        vm.roll(block.number + 1);
+    function testCheckupkeepFalsedIfEnoughTimeHasnotPass() public {
+        // arrange
+        vm.prank(player);
+        lottery.enter{value: _enteranceFee}();
 
         // act
-        lottery.performUpkeep("");
+        (bool upkeepNeeded,) = lottery.checkUpkeep("");
 
-        vm.expectRevert(Lottery.Lottery__UpkeepNotValid.selector);
+        // assert
+        assert(!upkeepNeeded);
+    }
+
+    function testCheckupkeepPassWhenEverythingIsOk() public lotteryEntered{
+
+        // act
+        (bool upkeepNeeded,) = lottery.checkUpkeep("");
+
+        // assert
+        assert(upkeepNeeded);
+    }
+
+    /*///////////////////////////////////////////////////////////
+                        perform Upkeep
+    ////////////////////////////////////////////////////////////*/
+
+    function testPerformeUpkeepRevertIfCheckUpkeepIsFalse() public {
+        // arrange
+        uint256 balance = 0;
+        uint256 players = 0;
+        Lottery.LotteryStatus lStatus = lottery.getLotteryStatus();
+        uint256 status = uint256(lStatus);
+        vm.prank(player);
+        lottery.enter{value: _enteranceFee}();
+        balance = _enteranceFee;
+        players = 1;
+        // act
+        // assert
+        vm.expectRevert(abi.encodeWithSelector(Lottery.Lottery__UpkeepNotValid.selector, balance, players, status));
+        lottery.performUpkeep("");
+    }
+
+    function testPerformeUpkeepRunsWell() public lotteryEntered {
+        
+        lottery.performUpkeep("");
+    }
+    
+    function testPerformeUpkeepEventRequestId() public lotteryEntered {
+
+        // act
+        vm.recordLogs();
+        lottery.performUpkeep("");
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        bytes32 requestid = logs[1].topics[1];
+
+        // assert
+        Lottery.LotteryStatus lStatus = lottery.getLotteryStatus();
+        assert(uint256(requestid) > 0);
+        assert(uint256(lStatus) == 1);
     }
 }

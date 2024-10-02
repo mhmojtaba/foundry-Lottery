@@ -44,6 +44,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     /* Events */
     event EnterLottery(address indexed _sender, uint256 _value, uint256 _enterTime);
     event winnerPicked(address indexed winner);
+    event requestRandomNumber(uint256 indexed requestId);
 
     constructor(
         uint256 _enteranceFee,
@@ -110,8 +111,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         }
         s_LotteryStatus = LotteryStatus.calculating;
         // getting random number from chainlink vrf
-        // uint256 requestId =
-        s_vrfCoordinator.requestRandomWords(
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(
             VRFV2PlusClient.RandomWordsRequest({
                 keyHash: I_KEYHASH,
                 subId: I_SUBSCRIPTIONID,
@@ -121,6 +121,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
                 extraArgs: VRFV2PlusClient._argsToBytes(VRFV2PlusClient.ExtraArgsV1({nativePayment: false}))
             })
         );
+        emit requestRandomNumber(requestId);
         // fulfillRandomWords(requestId, randomWords);
     }
 

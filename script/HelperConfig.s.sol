@@ -27,6 +27,7 @@ contract HelperConfig is CodeConstants, Script {
         uint32 _callbackGasLimit;
         address _vrfCoordinator;
         address link;
+        address account;
     }
 
     networkConfig public localNetworkConfig;
@@ -69,7 +70,8 @@ contract HelperConfig is CodeConstants, Script {
             0, // the subscriptionId
             100000, // the gasLimit
             address(vrfCoordinatorV2_5Mock), // vrf coordinator address
-            address(linkToken)
+            address(linkToken),
+            0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38 // Default address for tx.origin and msg.sender, 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38. Base.sol
         );
         return localNetworkConfig;
     }
@@ -82,7 +84,8 @@ contract HelperConfig is CodeConstants, Script {
             18158373438440650950665589907136733397195481284246089286377304796610796020611, // the subscriptionId
             100000, // the gasLimit
             0x9DdfaCa8183c41ad55329BdeeD9F6A8d53168B1B, // vrf coordinator address
-            0x779877A7B0D9E8603169DdbD7836e478b4624789
+            0x779877A7B0D9E8603169DdbD7836e478b4624789,
+            0x918b0DB5d32b963977a18bD14f1004be80C2D71F
         );
     }
 }

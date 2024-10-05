@@ -18,12 +18,12 @@ contract LotteryDeploy is Script {
         if (config._subscriptionId == 0) {
             CreateSubscription createSubscription = new CreateSubscription();
             (config._subscriptionId, config._vrfCoordinator) =
-                createSubscription.createSubscription(config._vrfCoordinator);
+                createSubscription.createSubscription(config._vrfCoordinator, config.account);
             FundSubscription fundSubscription = new FundSubscription();
-            fundSubscription.fundSubscription(config._vrfCoordinator, config._subscriptionId, config.link);
+            fundSubscription.fundSubscription(config._vrfCoordinator, config._subscriptionId, config.link, config.account);
         }
 
-        vm.startBroadcast();
+        vm.startBroadcast(config.account);
 
         Lottery lottery = new Lottery(
             config._enteranceFee,
@@ -36,7 +36,7 @@ contract LotteryDeploy is Script {
 
         vm.stopBroadcast();
         AddConsumer addConsumer = new AddConsumer();
-        addConsumer.addConsumer(address(lottery), config._vrfCoordinator, config._subscriptionId);
+        addConsumer.addConsumer(address(lottery), config._vrfCoordinator, config._subscriptionId, config.account);
 
         return (lottery, helperConfig);
     }
